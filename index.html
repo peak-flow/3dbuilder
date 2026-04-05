@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stylized Building Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #1a1a2e;
+        }
+
+        #container {
+            display: flex;
+            height: 100vh;
+        }
+
+        #viewer {
+            flex: 1;
+            position: relative;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        #controls {
+            width: 320px;
+            background: #16213e;
+            padding: 20px;
+            color: #eee;
+            overflow-y: auto;
+            border-left: 2px solid #0f3460;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #e94560;
+            text-align: center;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #0f3460;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #e94560;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .value-display {
+            min-width: 40px;
+            text-align: right;
+            font-size: 0.85rem;
+            color: #e94560;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #e94560;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #ff6b6b;
+        }
+
+        .btn-secondary {
+            background: #0f3460;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #1a4a7a;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            background: #0f3460;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 20px 0 10px 0;
+            border-bottom: 1px solid #0f3460;
+            padding-bottom: 5px;
+        }
+
+        #seed-input {
+            width: 100%;
+            padding: 10px;
+            background: #0f3460;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: monospace;
+        }
+
+        .color-preview {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 2px solid #0f3460;
+        }
+
+        #status {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(22, 33, 62, 0.9);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #aaa;
+            display: none;
+        }
+
+        #status.visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="viewer">
+            <div id="canvas-container"></div>
+            <div id="status">Building exported!</div>
+        </div>
+        <div id="controls">
+            <h1>🏢 Building Generator</h1>
+
+            <div class="control-group">
+                <button id="generate-btn" class="btn-primary">🎲 Generate New Building</button>
+            </div>
+
+            <div class="section-title">Dimensions</div>
+
+            <div class="control-group">
+                <label>Building Height</label>
+                <div class="slider-container">
+                    <input type="range" id="height-slider" min="20" max="100" value="60">
+                    <span class="value-display" id="height-value">60</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Base Width</label>
+                <div class="slider-container">
+                    <input type="range" id="width-slider" min="10" max="40" value="25">
+                    <span class="value-display" id="width-value">25</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Base Depth</label>
+                <div class="slider-container">
+                    <input type="range" id="depth-slider" min="10" max="40" value="20">
+                    <span class="value-display" id="depth-value">20</span>
+                </div>
+            </div>
+
+            <div class="section-title">Complexity</div>
+
+            <div class="control-group">
+                <label>Number of Segments</label>
+                <div class="slider-container">
+                    <input type="range" id="segments-slider" min="2" max="10" value="5">
+                    <span class="value-display" id="segments-value">5</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Variation Seed</label>
+                <input type="text" id="seed-input" placeholder="Enter seed or leave empty for random">
+            </div>
+
+            <div class="section-title">Style Options</div>
+
+            <div class="control-group">
+                <label>Color Palette</label>
+                <select id="palette-select">
+                    <option value="modern">Modern Blue</option>
+                    <option value="warm">Warm Sunset</option>
+                    <option value="mono">Monochrome</option>
+                    <option value="vibrant">Vibrant City</option>
+                    <option value="industrial">Industrial</option>
+                </select>
+                <div class="color-preview" id="color-preview"></div>
+            </div>
+
+            <div class="control-group">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="windows-check" checked>
+                    <label for="windows-check">Add Windows</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="roof-variations-check" checked>
+                    <label for="roof-variations-check">Roof Variations</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="wireframe-check">
+                    <label for="wireframe-check">Wireframe Mode</label>
+                </div>
+            </div>
+
+            <div class="section-title">Export</div>
+
+            <div class="control-group">
+                <button id="export-gltf-btn" class="btn-secondary">📦 Export as GLTF</button>
+                <button id="export-json-btn" class="btn-secondary">📄 Export as JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js and dependencies from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
